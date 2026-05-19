@@ -2,14 +2,14 @@
 (function () {
   'use strict';
 
-  const MMU_ROR  = '04ycbcn43';
-  const MAILTO   = 'nlp@mmu.ac.uk';
+  const MMU_ROR = '04ycbcn43';
+  const MAILTO = 'nlp@mmu.ac.uk';
   const MAX_PUBS = 20;
   const BASE = 'https://api.openalex.org';
   const SKIP_TYPES = new Set(['dataset', 'paratext']);
 
   const pubDynamic = document.getElementById('pubDynamic');
-  const filtersEl  = document.getElementById('pubFilters');
+  const filtersEl = document.getElementById('pubFilters');
   if (!pubDynamic) return;
 
   async function apiFetch(url) {
@@ -26,10 +26,9 @@
       .replace(/"/g, '&quot;');
   }
 
-  // Single source of truth (only once)
   const GROUP_AUTHORS = [
     { name: 'Matthew Shardlow' },
-    { name: 'Xia Cui', orcid: '0000-0002-1726-3814' }, // corrected Xia ORCID
+    { name: 'Xia Cui', orcid: '0000-0002-1726-3814' },
     { name: 'Kate Macfarlane' },
     { name: 'Seun Ajao' },
     { name: 'Ashley Williams', orcid: '0000-0002-6888-0521' },
@@ -42,7 +41,7 @@
   ];
 
   async function resolveAuthorId(author) {
-    if (author.openAlexAuthorId) return author.openAlexAuthorId; // if you later add Axxxx ID
+    if (author.openAlexAuthorId) return author.openAlexAuthorId;
 
     if (author.orcid) {
       try {
@@ -57,9 +56,7 @@
 
     try {
       const d = await apiFetch(
-        `${BASE}/authors?search=${q}` +
-        `&filter=affiliations.institution.ror:${MMU_ROR}` +
-        `&mailto=${MAILTO}`
+        `${BASE}/authors?search=${q}&filter=affiliations.institution.ror:${MMU_ROR}&mailto=${MAILTO}`
       );
       if (d.results?.length) return d.results[0].id;
     } catch (_) {}
@@ -83,7 +80,6 @@
     const url =
       `${BASE}/works` +
       `?filter=authorships.author.id:${idList}` +
-      `!concepts.id:C86803240` + // Exclude Biology concept
       `&sort=publication_date:desc` +
       `&per-page=${MAX_PUBS}` +
       `&select=${select}` +
@@ -95,7 +91,9 @@
 
   function renderFilters(works) {
     if (!filtersEl) return;
-    const years = [...new Set(works.map(w => w.publication_year).filter(Boolean))].sort((a, b) => b - a);
+
+    const years = [...new Set(works.map(w => w.publication_year).filter(Boolean))]
+      .sort((a, b) => b - a);
 
     filtersEl.innerHTML =
       '<button class="filter-btn active" data-year="all">All</button>' +
@@ -125,7 +123,7 @@
 
       const all = w.authorships || [];
       const shown = all.slice(0, 6).map(a => a.author?.display_name || '').filter(Boolean);
-      const authors = shown.length < all.length ? shown.join(', ') + ' et al.' : shown.join(', ');
+      const authors = shown.length < all.length ? `${shown.join(', ')} et al.` : shown.join(', ');
       const venue = w.primary_location?.source?.display_name || '';
 
       const links = [];
@@ -144,7 +142,8 @@
             ${venue ? `<p class="pub-venue">${esc(venue)}</p>` : ''}
             ${links.length ? `<div class="pub-links">${links.join('')}</div>` : ''}
           </div>
-        </article>`;
+        </article>
+      `;
     }).join('');
 
     pubDynamic.innerHTML = `<div class="pub-list">${html}</div>`;
@@ -157,7 +156,8 @@
         <p>Loading publications from
           <a href="https://openalex.org" target="_blank" rel="noopener noreferrer">OpenAlex</a>…
         </p>
-      </div>`;
+      </div>
+    `;
 
     try {
       const ids = (await Promise.all(GROUP_AUTHORS.map(resolveAuthorId))).filter(Boolean);
@@ -180,7 +180,8 @@
               Browse on OpenAlex ↗
             </a>
           </p>
-        </div>`;
+        </div>
+      `;
     }
   }
 
