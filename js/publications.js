@@ -27,25 +27,53 @@
   }
 
   const GROUP_AUTHORS = [
-    { name: 'Matthew Shardlow' },
-    { name: 'Xia Cui', orcid: '0000-0002-1726-3814', hasDisambiguationIssues: true },
+    { name: 'Matthew Shardlow', openAlexAuthorId: 'https://openalex.org/A5035746903' },
+    { name: 'Xia Cui', orcid: '0000-0002-1726-3814', openAlexAuthorId: 'https://openalex.org/A5083840026', hasDisambiguationIssues: true },
     { name: 'Kate Macfarlane' },
-    { name: 'Seun Ajao' },
-    { name: 'Ashley Williams', orcid: '0000-0002-6888-0521' },
-    { name: 'Sam Attwood' },
-    { name: 'Naomi Adel' },
-    { name: 'Filippos Ventirozos' },
-    { name: 'Charlie Roadhouse' },
-    { name: 'Paula Reyero Lobo' },
-    { name: 'Mkululi Sikosana' },
+    { name: 'Seun Ajao', searchNames: ['Oluwaseun Ajao'], openAlexAuthorId: 'https://openalex.org/A5047025794' },
+    { name: 'Ashley Williams', orcid: '0000-0002-6888-0521', openAlexAuthorId: 'https://openalex.org/A5083332145' },
+    { name: 'Sam Attwood', openAlexAuthorId: 'https://openalex.org/A5052210115' },
+    { name: 'Naomi Adel', openAlexAuthorId: 'https://openalex.org/A5049868897' },
+    { name: 'Filippos Ventirozos', openAlexAuthorId: 'https://openalex.org/A5078648336' },
+    { name: 'Charlie Roadhouse', openAlexAuthorId: 'https://openalex.org/A5119181306' },
+    { name: 'Paula Reyero Lobo', openAlexAuthorId: 'https://openalex.org/A5000893488' },
+    { name: 'Mkululi Sikosana', openAlexAuthorId: 'https://openalex.org/A5106700112' },
   ];
+
+  function normalizeName(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function hasMmuInstitution(authorResult) {
+    const institutions = Array.isArray(authorResult?.last_known_institutions)
+      ? authorResult.last_known_institutions
+      : [];
+    return institutions.some(inst =>
+      String(inst?.display_name || '').toLowerCase().includes('manchester metropolitan')
+    );
+  }
 
   function pickAuthorId(author, results) {
     const list = Array.isArray(results) ? results : [];
     if (!list.length) return null;
-    const targetName = String(author?.name || '').trim().toLowerCase();
-    const exact = list.find(r => String(r?.display_name || '').trim().toLowerCase() === targetName);
-    return (exact || list[0])?.id || null;
+
+    const targetNames = [author?.name, ...(author?.searchNames || [])]
+      .map(normalizeName)
+      .filter(Boolean);
+    if (!targetNames.length) return null;
+
+    const exactMatches = list.filter(r => targetNames.includes(normalizeName(r?.display_name)));
+    if (!exactMatches.length) return null;
+
+    const mmuExact = exactMatches.find(hasMmuInstitution);
+    if (mmuExact?.id) return mmuExact.id;
+
+    if (exactMatches.length > 1) return null;
+    return exactMatches[0]?.id || null;
   }
 
   function filterWorksByResolvedAuthors(works, resolvedAuthors, authorsWithAmbiguity = new Set()) {
@@ -62,6 +90,47 @@
         const field = String(work?.primary_topic?.field?.display_name || '').toLowerCase();
         return field.includes('computer science');
       }
+      return true;
+    });
+  }
+
+  function normalizeTitle(title) {
+    return String(title || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function dedupeWorks(works) {
+    const seenOpenAlex = new Set();
+    const seenDoi = new Set();
+    const seenTitleYear = new Set();
+
+    return (works || []).filter(work => {
+      const openAlexId = String(work?.id || '').trim();
+      if (openAlexId) {
+        if (seenOpenAlex.has(openAlexId)) return false;
+        seenOpenAlex.add(openAlexId);
+      }
+
+      const doi = String(work?.doi || '')
+        .toLowerCase()
+        .replace('https://doi.org/', '')
+        .trim();
+      if (doi) {
+        if (seenDoi.has(doi)) return false;
+        seenDoi.add(doi);
+      }
+
+      const year = String(work?.publication_year || '');
+      const title = normalizeTitle(work?.title);
+      const titleYearKey = year && title ? `${year}|${title}` : '';
+      if (titleYearKey) {
+        if (seenTitleYear.has(titleYearKey)) return false;
+        seenTitleYear.add(titleYearKey);
+      }
+
       return true;
     });
   }
@@ -89,13 +158,11 @@
       if (id) return id;
     } catch (_) {}
 
-    if (author.allowGlobalFallback === true) {
-      try {
-        const d = await apiFetch(`${BASE}/authors?search=${q}&mailto=${MAILTO}`);
-        const id = pickAuthorId(author, d.results);
-        if (id) return id;
-      } catch (_) {}
-    }
+    try {
+      const d = await apiFetch(`${BASE}/authors?search=${q}&mailto=${MAILTO}`);
+      const id = pickAuthorId(author, d.results);
+      if (id) return id;
+    } catch (_) {}
 
     return null;
   }
@@ -208,10 +275,11 @@
       );
 
       const works = filterWorksByResolvedAuthors(await fetchWorks(uniqueIds), resolvedAuthors, authorsWithAmbiguity);
-      if (!works.length) throw new Error('No publications returned');
+      const dedupedWorks = dedupeWorks(works);
+      if (!dedupedWorks.length) throw new Error('No publications returned');
 
-      renderFilters(works);
-      renderWorks(works);
+      renderFilters(dedupedWorks);
+      renderWorks(dedupedWorks);
     } catch (err) {
       console.error('[MMU NLP] Publications load failed:', err);
       pubDynamic.innerHTML = `
