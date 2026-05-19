@@ -65,7 +65,7 @@
       const btn = form.querySelector('button[type="submit"]');
       btn.textContent = '✓ Message sent!';
       btn.disabled = true;
-      btn.style.background = '#27ae60';
+      btn.style.background = 'var(--mmu-red)';
       form.reset();
     });
   }
@@ -89,7 +89,6 @@
         observer.observe(el);
       });
 
-    document.addEventListener('DOMContentLoaded', () => {}, false);
   }
 
   /* helper: add .visible class */
