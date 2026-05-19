@@ -28,7 +28,7 @@
 
   const GROUP_AUTHORS = [
     { name: 'Matthew Shardlow' },
-    { name: 'Xia Cui', orcid: '0000-0002-1726-3814' },
+    { name: 'Xia Cui', orcid: '0000-0002-1726-3814', hasDisambiguationIssues: true },
     { name: 'Kate Macfarlane' },
     { name: 'Seun Ajao' },
     { name: 'Ashley Williams', orcid: '0000-0002-6888-0521' },
@@ -40,6 +40,30 @@
     { name: 'Mkululi Sikosana' },
   ];
 
+  function pickAuthorId(author, results) {
+    const list = Array.isArray(results) ? results : [];
+    if (!list.length) return null;
+    const targetName = String(author?.name || '').trim().toLowerCase();
+    const exact = list.find(r => String(r?.display_name || '').trim().toLowerCase() === targetName);
+    return (exact || list[0])?.id || null;
+  }
+
+  function filterWorksByResolvedAuthors(works, resolvedAuthors, authorsWithAmbiguity = new Set()) {
+    const allowed = new Set((resolvedAuthors || []).map(r => r.id));
+    return (works || []).filter(work => {
+      const authorships = Array.isArray(work?.authorships) ? work.authorships : [];
+      const authorship = authorships.find(a => allowed.has(a?.author?.id));
+      if (!authorship) return false;
+
+      const authorId = authorship.author.id;
+      if (authorsWithAmbiguity.has(authorId)) {
+        const field = String(work?.primary_topic?.field?.display_name || '').toLowerCase();
+        return field.includes('computer science');
+      }
+      return true;
+    });
+  }
+
   async function resolveAuthorId(author) {
     if (author.openAlexAuthorId) return author.openAlexAuthorId;
 
@@ -48,7 +72,8 @@
         const d = await apiFetch(
           `${BASE}/authors?filter=orcid:${encodeURIComponent(author.orcid)}&mailto=${MAILTO}`
         );
-        if (d.results?.length) return d.results[0].id;
+        const id = pickAuthorId(author, d.results);
+        if (id) return id;
       } catch (_) {}
     }
 
@@ -58,13 +83,17 @@
       const d = await apiFetch(
         `${BASE}/authors?search=${q}&filter=affiliations.institution.ror:${MMU_ROR}&mailto=${MAILTO}`
       );
-      if (d.results?.length) return d.results[0].id;
+      const id = pickAuthorId(author, d.results);
+      if (id) return id;
     } catch (_) {}
 
-    try {
-      const d = await apiFetch(`${BASE}/authors?search=${q}&mailto=${MAILTO}`);
-      if (d.results?.length) return d.results[0].id;
-    } catch (_) {}
+    if (author.allowGlobalFallback === true) {
+      try {
+        const d = await apiFetch(`${BASE}/authors?search=${q}&mailto=${MAILTO}`);
+        const id = pickAuthorId(author, d.results);
+        if (id) return id;
+      } catch (_) {}
+    }
 
     return null;
   }
@@ -74,7 +103,7 @@
     const select = [
       'id', 'title', 'authorships', 'publication_year',
       'publication_date', 'primary_location', 'doi',
-      'open_access', 'type', 'cited_by_count',
+      'open_access', 'type', 'cited_by_count', 'primary_topic',
     ].join(',');
 
     const url =
@@ -160,11 +189,23 @@
     `;
 
     try {
-      const ids = (await Promise.all(GROUP_AUTHORS.map(resolveAuthorId))).filter(Boolean);
-      const uniqueIds = [...new Set(ids)];
+      const resolvedAuthors = (await Promise.all(
+        GROUP_AUTHORS.map(async author => {
+          const id = await resolveAuthorId(author);
+          return id ? { id, author } : null;
+        })
+      )).filter(Boolean);
+
+      const uniqueIds = [...new Set(resolvedAuthors.map(r => r.id))];
       if (!uniqueIds.length) throw new Error('Could not resolve any author IDs');
 
-      const works = await fetchWorks(uniqueIds);
+      const authorsWithAmbiguity = new Set(
+        resolvedAuthors
+          .filter(r => r.author.hasDisambiguationIssues)
+          .map(r => r.id)
+      );
+
+      const works = filterWorksByResolvedAuthors(await fetchWorks(uniqueIds), resolvedAuthors, authorsWithAmbiguity);
       if (!works.length) throw new Error('No publications returned');
 
       renderFilters(works);
