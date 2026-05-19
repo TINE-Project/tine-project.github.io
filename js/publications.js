@@ -52,11 +52,13 @@
     const allowed = new Set((resolvedAuthors || []).map(r => r.id));
     return (works || []).filter(work => {
       const authorships = Array.isArray(work?.authorships) ? work.authorships : [];
-      const authorship = authorships.find(a => allowed.has(a?.author?.id));
-      if (!authorship) return false;
+      const matchedAuthorIds = authorships
+        .map(a => a?.author?.id)
+        .filter(id => allowed.has(id));
+      if (!matchedAuthorIds.length) return false;
 
-      const authorId = authorship.author.id;
-      if (authorsWithAmbiguity.has(authorId)) {
+      const requiresFieldCheck = matchedAuthorIds.some(id => authorsWithAmbiguity.has(id));
+      if (requiresFieldCheck) {
         const field = String(work?.primary_topic?.field?.display_name || '').toLowerCase();
         return field.includes('computer science');
       }
