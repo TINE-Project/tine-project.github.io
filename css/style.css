@@ -134,9 +134,12 @@ img { max-width: 100%; display: block; }
 }
 
 .brand-logo {
-  height: 42px;
+  height: 34px;
+  max-height: 34px;
   width: auto;
   display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .brand-badge {
@@ -919,6 +922,8 @@ footer {
 
 @media (max-width: 640px) {
   .section { padding: 56px 0; }
+
+  .brand-logo { height: 30px; max-height: 30px; }
 
   .navbar-nav { display: none; }
 
