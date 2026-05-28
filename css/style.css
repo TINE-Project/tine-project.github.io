@@ -134,8 +134,8 @@ img { max-width: 100%; display: block; }
 }
 
 .brand-logo {
-  height: 34px;
-  max-height: 34px;
+  height: 40px;
+  max-height: 40px;
   width: auto;
   display: block;
   flex: 0 0 auto;
@@ -923,7 +923,7 @@ footer {
 @media (max-width: 640px) {
   .section { padding: 56px 0; }
 
-  .brand-logo { height: 30px; max-height: 30px; }
+  .brand-logo { height: 34px; max-height: 34px; }
 
   .navbar-nav { display: none; }
 
