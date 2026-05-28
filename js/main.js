@@ -81,7 +81,7 @@
       });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.research-card, .person-card, .news-card, .pub-item')
+    document.querySelectorAll('.research-card, .person-card, .news-card, .pub-item, .project-card')
       .forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
@@ -93,7 +93,7 @@
 
   /* helper: add .visible class */
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.research-card, .person-card, .news-card, .pub-item')
+    document.querySelectorAll('.research-card, .person-card, .news-card, .pub-item, .project-card')
       .forEach(el => {
         const style = el.style;
         /* reset styles once CSS transition fires */
@@ -107,7 +107,7 @@
 
   /* patch .visible */
   const style = document.createElement('style');
-  style.textContent = '.research-card.visible,.person-card.visible,.news-card.visible,.pub-item.visible{opacity:1!important;transform:none!important}';
+  style.textContent = '.research-card.visible,.person-card.visible,.news-card.visible,.pub-item.visible,.project-card.visible{opacity:1!important;transform:none!important}';
   document.head.appendChild(style);
 
 })();
