@@ -1,2 +1,3 @@
-# mmunlp.github.io
-MMU-NLP group page
+# tine.github.io
+
+TINE project website - forked from MMU-NLP group page
