@@ -111,7 +111,7 @@ img { max-width: 100%; display: block; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 128px;
+  height: 180px;
 }
 
 .navbar-brand {
@@ -120,13 +120,13 @@ img { max-width: 100%; display: block; }
   gap: 12px;
   color: var(--mmu-dark);
   font-weight: 700;
-  font-size: 3rem;
+  font-size: 5vw;
   letter-spacing: -.3px;
 }
 
 .brand-logo {
-  height: 120px;
-  max-height: 120px;
+  height: 180px;
+  max-height: 180px;
   width: auto;
   display: block;
   flex: 0 0 auto;
@@ -153,7 +153,7 @@ img { max-width: 100%; display: block; }
 
 .navbar-nav a {
   color: var(--text-light);
-  font-size: .9rem;
+  font-size: 1rem;
   font-weight: 500;
   padding: 8px 14px;
   border-radius: 6px;
@@ -191,11 +191,16 @@ img { max-width: 100%; display: block; }
   background: linear-gradient(to top, var(--bg), #ffffff);
   display: flex;
   align-items: center;
-  padding: 120px 0 80px 0;
+  padding: 180px 0 80px 0;
   position: relative;
   overflow: hidden;
 }
 
+.hero-img {
+  max-width: 350px;
+  padding: 50px 0px 0px 0px;
+  margin: auto;
+}
 
 .hero-grid {
   display: grid;
@@ -1198,4 +1203,14 @@ body * {
   .project-detail-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.graph-container {
+  max-width: 950px;
+  padding: 20px;
+  margin: auto
+}
+
+.graph-container img {
+  box-shadow: 20px 20px 50px gray;
 }
