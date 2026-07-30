@@ -937,7 +937,7 @@ footer {
   .footer-grid { grid-template-columns: 1fr 1fr; }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 740px) {
   .section { padding: 56px 0; }
 
   .brand-logo { height: 34px; max-height: 34px; }
@@ -1213,4 +1213,5 @@ body * {
 
 .graph-container img {
   box-shadow: 20px 20px 50px gray;
+  margin : auto;
 }
