@@ -120,7 +120,7 @@ img { max-width: 100%; display: block; }
   gap: 12px;
   color: var(--mmu-dark);
   font-weight: 700;
-  font-size: 5vw;
+  font-size: min(5vw, 80px);
   letter-spacing: -.3px;
 }
 
