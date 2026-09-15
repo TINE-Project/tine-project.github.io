@@ -125,8 +125,8 @@ img { max-width: 100%; display: block; }
 }
 
 .brand-logo {
-  height: 180px;
-  max-height: 180px;
+  height: 100px;
+  max-height: 100px;
   width: auto;
   display: block;
   flex: 0 0 auto;
